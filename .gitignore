@@ -1,1 +1,4 @@
 /.vscode
+/Source/tree.dSYM/
+/Source/tree
+/build
