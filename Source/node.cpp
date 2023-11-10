@@ -6,27 +6,30 @@
 #include <unistd.h>
 
 enum class NodeStatus {
-    Success,
-    Fail,
-    Running
+    kSuccess,
+    kFail,
+    kRunning
 };
 
 class BlackBoard {
 public:
-    void SetValue(const std::string& key, const std::string& value) {
-        data[key] = value;
+    void SetValue(const std::string& kKey, const std::string& kValue) 
+    {
+        data[kKey] = kValue;
     }
 
-    std::string GetValue(const std::string& key) const {
-        auto it = data.find(key);
+    std::string GetValue(const std::string& kKey) const 
+    {
+        auto it = data.find(kKey);
         if (it != data.end()) {
             return it->second;
         }
         return "No key found matches data";
     }
 
-    bool ContainsKey(const std::string& key) const {
-        return data.find(key) != data.end();
+    bool ContainsKey(const std::string& kKey) const 
+    {
+        return data.find(kKey) != data.end();
     }
 
 private:
@@ -47,71 +50,89 @@ protected:
 public:
     CompositeNode() {}
 
-    void AddChild(BehaviorNode* child) {
+    void AddChild(BehaviorNode* child) 
+    {
         children.push_back(child);
     }
 
-    virtual void Display(int depth = 0) const override {
-        for (int i = 0; i < depth; i++) {
+    virtual void Display(int depth = 0) const override 
+    {
+        for (int i = 0; i < depth; i++) 
+        {
             std::cout << "  "; // Indentation for better visualization
         }
 
         std::cout << "Composite Node" << std::endl;
         
-        for (const auto& child : children) {
-            child->Display(depth + 1);
+        for (const auto& kChild : children) 
+        {
+            kChild->Display(depth + 1);
         }
     }
 };
 
 class SequenceNode : public CompositeNode {
 public:
-    virtual NodeStatus Execute() override {
-        for (BehaviorNode* child : children) {
+    virtual NodeStatus Execute() override 
+    {
+        for (BehaviorNode* child : children) 
+        {
             NodeStatus status = child->Execute();
-            if (status == NodeStatus::Fail) {
-                return NodeStatus::Fail;
-            } else if (status == NodeStatus::Running) {
-                return NodeStatus::Running;
+            if (status == NodeStatus::kFail) 
+            {
+                return NodeStatus::kFail;
+            } else if (status == NodeStatus::kRunning) 
+            {
+                return NodeStatus::kRunning;
             }
         }
 
-        return NodeStatus::Success;
+        return NodeStatus::kSuccess;
     }
 
-    virtual void Display(int depth = 0) const override {
-        for (int i = 0; i < depth; i++) {
+    virtual void Display(int depth = 0) const override 
+    {
+        for (int i = 0; i < depth; i++) 
+        {
             std::cout << "  ";
         }
         std::cout << "Sequence Node" << std::endl;
-        for (const auto& child : children) {
-            child->Display(depth + 1);
+        for (const auto& kChild : children) 
+        {
+            kChild->Display(depth + 1);
         }
     }
 };
 
 class SelectorNode : public CompositeNode {
 public:
-    virtual NodeStatus Execute() override {
-        for (BehaviorNode* child : children) {
+    virtual NodeStatus Execute() override 
+    {
+        for (BehaviorNode* child : children) 
+        {
             NodeStatus status = child->Execute();
-            if (status == NodeStatus::Success) {
-                return NodeStatus::Success;
-            } else if (status == NodeStatus::Running) {
-                return NodeStatus::Running;
+            if (status == NodeStatus::kSuccess) 
+            {
+                return NodeStatus::kSuccess;
+            } else if (status == NodeStatus::kRunning) 
+            {
+                return NodeStatus::kRunning;
             }
         }
 
-        return NodeStatus::Fail;
+        return NodeStatus::kFail;
     }
 
-    virtual void Display(int depth = 0) const override {
-        for (int i = 0; i < depth; i++) {
+    virtual void Display(int depth = 0) const override 
+    {
+        for (int i = 0; i < depth; i++) 
+        {
             std::cout << "  ";
         }
         std::cout << "Selector Node" << std::endl;
-        for (const auto& child : children) {
-            child->Display(depth + 1);
+        for (const auto& kChild : children) 
+        {
+            kChild->Display(depth + 1);
         }
     }
 };
@@ -131,38 +152,37 @@ public:
     ActionNode(ActionFunction action, BlackBoard* blackboard)
         : action_(action), blackboard_(blackboard) {}
 
-    virtual NodeStatus Execute() override {
+    virtual NodeStatus Execute() override 
+    {
         return this->action_();
     }
 
-    virtual void Display(int depth = 0) const override {
-        for (int i = 0; i < depth; i++) {
+    virtual void Display(int depth = 0) const override 
+    {
+        for (int i = 0; i < depth; i++) 
+        {
             std::cout << "  ";
         }
         std::cout << "Action Node" << std::endl;
     }
 };
 
-class InputActionNode : public ActionNode {
-public:
-    InputActionNode(std::function<NodeStatus(std::istream& input, std::ostream& output)> input_action)
-        : ActionNode([input_action] {
-            return input_action(std::cin, std::cout);
-        }) {}
-};
-
 class FallbackNode : public CompositeNode {
 public:
-    virtual NodeStatus Execute() override {
-        for (BehaviorNode* child : children) {
+    virtual NodeStatus Execute() override 
+    {
+        for (BehaviorNode* child : children) 
+        {
             NodeStatus status = child->Execute();
-            if (status == NodeStatus::Success) {
-                return NodeStatus::Success;
-            } else if (status == NodeStatus::Running) {
-                return NodeStatus::Running;
+            if (status == NodeStatus::kSuccess) 
+            {
+                return NodeStatus::kSuccess;
+            } else if (status == NodeStatus::kRunning) 
+            {
+                return NodeStatus::kRunning;
             }
         }
-        return NodeStatus::Fail;
+        return NodeStatus::kFail;
     }
 };
 
@@ -170,7 +190,8 @@ class ParallelNode : public CompositeNode {
 public:
     ParallelNode(int successThreshold) : success_threshold_(successThreshold) {}
 
-    virtual NodeStatus Execute() override {
+    virtual NodeStatus Execute() override 
+    {
         int success_count = 0;
         int failure_count = 0;
         int running_count = 0;
@@ -178,23 +199,30 @@ public:
         for (BehaviorNode* child : children) {
             NodeStatus status = child->Execute();
 
-            if (status == NodeStatus::Success) {
+            if (status == NodeStatus::kSuccess) 
+            {
                 success_count++;
-            } else if (status == NodeStatus::Fail) {
+            } else if (status == NodeStatus::kFail) 
+            {
                 failure_count++;
-            } else if (status == NodeStatus::Running) {
+            } else if (status == NodeStatus::kRunning) 
+            {
                 running_count++;
             }
         }
 
-        if (success_count >= success_threshold_) {
-            return NodeStatus::Success;
-        } else if (failure_count > children.size() - success_threshold_) {
-            return NodeStatus::Fail;
-        } else if (running_count > 0) {
-            return NodeStatus::Running;
-        } else {
-            return NodeStatus::Fail;
+        if (success_count >= success_threshold_) 
+        {
+            return NodeStatus::kSuccess;
+        } else if (failure_count > children.size() - success_threshold_) 
+        {
+            return NodeStatus::kFail;
+        } else if (running_count > 0) 
+        {
+            return NodeStatus::kRunning;
+        } else 
+        {
+            return NodeStatus::kFail;
         }
     }
 
@@ -210,29 +238,31 @@ int main() {
 
     patrol_sequence->AddChild(new ActionNode([](){
         std::cout << "Patrolling..." << std::endl;
-        return NodeStatus::Success;
+        return NodeStatus::kSuccess;
     }));
 
     patrol_sequence->AddChild(new ActionNode([](){
         std::cout << "Continuing patrol..." << std::endl;
-        return NodeStatus::Success;
+        return NodeStatus::kSuccess;
     }));
 
     ActionNode* detect_enemy_action = new ActionNode([&blackboard]() {
         std::string enemyDetected = blackboard.GetValue("enemyDetected");
 
         std::cout << "Detecting enemy..." << std::endl;
-        if (enemyDetected == "true") {
+        if (enemyDetected == "true") 
+        {
             std::cout << "Enemy Found!" << std::endl;
-            return NodeStatus::Success;
-        } else {
-            return NodeStatus::Fail;
+            return NodeStatus::kSuccess;
+        } else 
+        {
+            return NodeStatus::kFail;
         }
     });
 
     ActionNode* attack_action = new ActionNode([]() {
         std::cout << "Attacking enemy..." << std::endl;
-        return NodeStatus::Success;
+        return NodeStatus::kSuccess;
     });
 
     root->AddChild(patrol_sequence);
@@ -245,11 +275,14 @@ int main() {
     sleep(3);
     root->Execute();
 
-    if (result == NodeStatus::Success) {
+    if (result == NodeStatus::kSuccess) 
+    {
         std::cout << "Behavior tree succeeded" << std::endl;
-    } else if (result == NodeStatus::Fail) {
+    } else if (result == NodeStatus::kFail) 
+    {
         std::cout << "Behavior tree failed." << std::endl;
-    } else if (result == NodeStatus::Running) {
+    } else if (result == NodeStatus::kRunning) 
+    {
         std::cout << "Behavior tree is running." << std::endl;
     }
 
