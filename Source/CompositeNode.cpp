@@ -116,6 +116,7 @@ public:
     }
 };
 
+// TODO: Make blackboard pointer optional
 class ActionNode : public BehaviorNode {
 public:
     using ActionFunction = std::function<NodeStatus()>;
@@ -142,15 +143,13 @@ public:
     }
 };
 
-
-// class InputActionNode : public ActionNode {
-// public:
-//     InputActionNode(std::function<NodeStatus(std::istream& input, std::ostream& output)> inputAction)
-//         : ActionNode([inputAction] {
-//             return inputAction(std::cin, std::cout);
-//         }) {}
-// };
-
+class InputActionNode : public ActionNode {
+public:
+    InputActionNode(std::function<NodeStatus(std::istream& input, std::ostream& output)> input_action)
+        : ActionNode([input_action] {
+            return input_action(std::cin, std::cout);
+        }) {}
+};
 
 class FallbackNode : public CompositeNode {
 public:
@@ -169,30 +168,30 @@ public:
 
 class ParallelNode : public CompositeNode {
 public:
-    ParallelNode(int successThreshold) : successThreshold_(successThreshold) {}
+    ParallelNode(int successThreshold) : success_threshold_(successThreshold) {}
 
     virtual NodeStatus Execute() override {
-        int successCount = 0;
-        int failureCount = 0;
-        int runningCount = 0;
+        int success_count = 0;
+        int failure_count = 0;
+        int running_count = 0;
 
         for (BehaviorNode* child : children) {
             NodeStatus status = child->Execute();
 
             if (status == NodeStatus::Success) {
-                successCount++;
+                success_count++;
             } else if (status == NodeStatus::Fail) {
-                failureCount++;
+                failure_count++;
             } else if (status == NodeStatus::Running) {
-                runningCount++;
+                running_count++;
             }
         }
 
-        if (successCount >= successThreshold_) {
+        if (success_count >= success_threshold_) {
             return NodeStatus::Success;
-        } else if (failureCount > children.size() - successThreshold_) {
+        } else if (failure_count > children.size() - success_threshold_) {
             return NodeStatus::Fail;
-        } else if (runningCount > 0) {
+        } else if (running_count > 0) {
             return NodeStatus::Running;
         } else {
             return NodeStatus::Fail;
@@ -200,56 +199,50 @@ public:
     }
 
 private:
-    int successThreshold_;
+    int success_threshold_;
 };
-
 
 int main() {
     BlackBoard blackboard;
     SelectorNode* root = new SelectorNode;
 
-    SequenceNode* patrolSequence = new SequenceNode;
+    SequenceNode* patrol_sequence = new SequenceNode;
 
-    patrolSequence->AddChild(new ActionNode([](){
+    patrol_sequence->AddChild(new ActionNode([](){
         std::cout << "Patrolling..." << std::endl;
         return NodeStatus::Success;
     }));
 
-    patrolSequence->AddChild(new ActionNode([](){
+    patrol_sequence->AddChild(new ActionNode([](){
         std::cout << "Continuing patrol..." << std::endl;
         return NodeStatus::Success;
     }));
 
-    ActionNode* detectEnemyAction = new ActionNode([&blackboard]() {
+    ActionNode* detect_enemy_action = new ActionNode([&blackboard]() {
         std::string enemyDetected = blackboard.GetValue("enemyDetected");
 
         std::cout << "Detecting enemy..." << std::endl;
         if (enemyDetected == "true") {
+            std::cout << "Enemy Found!" << std::endl;
             return NodeStatus::Success;
         } else {
             return NodeStatus::Fail;
         }
     });
 
-    ActionNode* testAction = new ActionNode([]() {
-        std::cout << "Testing..." << std::endl;
-        return NodeStatus::Success;
-    });
-
-    ActionNode* attackAction = new ActionNode([]() {
+    ActionNode* attack_action = new ActionNode([]() {
         std::cout << "Attacking enemy..." << std::endl;
         return NodeStatus::Success;
     });
 
-    root->AddChild(patrolSequence);
-    patrolSequence->AddChild(detectEnemyAction);
-    patrolSequence->AddChild(attackAction);
-    patrolSequence->AddChild(testAction);
+    root->AddChild(patrol_sequence);
+    patrol_sequence->AddChild(detect_enemy_action);
+    patrol_sequence->AddChild(attack_action);
 
     NodeStatus result = root->Execute();
 
     blackboard.SetValue("enemyDetected", "true");
-    sleep(5);
+    sleep(3);
     root->Execute();
 
     if (result == NodeStatus::Success) {
@@ -260,7 +253,7 @@ int main() {
         std::cout << "Behavior tree is running." << std::endl;
     }
 
-    root->Display();
+    // root->Display();
 
     
     return 0;
